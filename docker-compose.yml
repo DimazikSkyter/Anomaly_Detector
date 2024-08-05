@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+#  anomaly_detector:
+#    build: .
+#    container_name: anomaly_detector
+#    volumes:
+#      - .:/app
+#    command: python anomaly_detector/main.py
+#    environment:
+#      - VIRTUAL_ENV=/app/venv
+#      - PATH=/app/venv/bin:$PATH
+#    depends_on:
+#      - victoriametrics
+
+
+  victoriametrics:
+    image: victoriametrics/victoria-metrics
+    container_name: victoriametrics
+    ports:
+      - "8428:8428"
+    volumes:
+      - ./victoriametrics.yml:/victoriametrics.yml
+      - victoriametrics_data:/victoriametrics_data
+    command:
+      - '--promscrape.config=/victoriametrics.yml'
+
+volumes:
+  victoriametrics_data:
+

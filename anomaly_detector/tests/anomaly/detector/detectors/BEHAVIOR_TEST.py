@@ -1,0 +1,107 @@
+import unittest
+import json
+
+from matplotlib import pyplot as plt
+
+from anomaly.detector.converter.MetricConverter import MetricConverter
+from anomaly.detector.metrics.Metrics import Metrics, Metric
+from anomaly.detector.parts.BehaviorDetector import BehaviorDetector
+
+
+
+class BehaviorDetectorTests(unittest.TestCase):
+    def test_no_anomaly(self):
+        with open("train.json", 'r') as file:
+            json_str_train = file.read()
+        with open("test_no_anomaly.json", 'r') as file_no_anomaly:
+            json_str_test = file_no_anomaly.read()
+
+        json_loads_train = json.loads(json_str_train)
+        json_loads_test = json.loads(json_str_test)
+
+        metrics_train: Metrics = MetricConverter.convert(json_loads_train, 1000, 20)
+
+        beh_detector = BehaviorDetector(4, data_len=50, shift=5, lstm_size=256, mult=2, dropout_rate=0.3, logger_level="DEBUG")
+        beh_detector.train(metrics_train, epochs=60)
+
+        metrics_test: Metrics = MetricConverter.convert(json_loads_test, 50, 20)
+        print(f"Metrics test len {metrics_test.series_length()}")
+        result = beh_detector.detect(metrics_test)
+
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(24, 10))
+
+        for key, value in metrics_train.series.items():
+            ax1.plot(value, label=key)
+        ax1.set_title('Train metric behavior no anomaly')
+        ax1.set_xlabel('Index')
+        ax1.set_ylabel('Value')
+        ax1.legend()
+
+        for key, value in metrics_test.series.items():
+            ax2.plot(value, label=key)
+        ax2.set_title('Test metric behavior no anomaly')
+        ax2.set_xlabel('Index')
+        ax2.set_ylabel('Value')
+        ax2.legend()
+
+        ax3.plot(result, label='Detector')
+        ax3.set_title('Behavior detector no anomaly')
+        ax3.set_xlabel('Index')
+        ax3.set_ylabel('Value')
+        ax3.set_ylim(0, 1.1)
+        ax3.legend()
+
+        plt.tight_layout()
+        plt.show()
+
+    def test_anomaly(self):
+        import os
+
+        print("Current working directory:", os.getcwd())
+
+        with open("train.json", 'r') as file:
+            json_str_train = file.read()
+        with open("test_anomaly.json", 'r') as file_with_anomaly:
+            json_str_test = file_with_anomaly.read()
+
+        json_loads_train = json.loads(json_str_train)
+        json_loads_test = json.loads(json_str_test)
+
+        metrics_train: Metrics = MetricConverter.convert(json_loads_train, 1000, 20)
+
+        beh_detector = BehaviorDetector(4, data_len=50, lstm_size=256, shift=5, mult=2, dropout_rate=0.3, logger_level="DEBUG")
+        beh_detector.train(metrics_train, epochs=60)
+
+        metrics_test: Metrics = MetricConverter.convert(json_loads_test, 50, 20)
+        print(f"Metrics test len {metrics_test.series_length()}")
+        result = beh_detector.detect(metrics_test)
+
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(24, 10))
+
+        for key, value in metrics_train.series.items():
+            ax1.plot(value, label=key)
+        ax1.set_title('Train metric behavior with anomaly')
+        ax1.set_xlabel('Index')
+        ax1.set_ylabel('Value')
+        ax1.legend()
+
+        for key, value in metrics_test.series.items():
+            ax2.plot(value, label=key)
+        ax2.set_title('Behavior detector with anomaly')
+        ax2.set_xlabel('Index')
+        ax2.set_ylabel('Value')
+        ax2.legend()
+
+        ax3.plot(result, label='Detector')
+        ax3.set_title('Behavior detector with anomaly')
+        ax3.set_xlabel('Index')
+        ax3.set_ylabel('Value')
+        ax3.set_ylim(0, 1.1)
+        ax3.legend()
+
+        plt.tight_layout()
+        plt.show()
+
+
+if __name__ == '__main__':
+    unittest.main()
