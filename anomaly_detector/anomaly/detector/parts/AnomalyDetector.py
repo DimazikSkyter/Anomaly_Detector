@@ -1,33 +1,40 @@
+import os
+
 import numpy as np
 from typing import List
 
 from keras.src.callbacks import EarlyStopping
 
 from anomaly.detector.metrics.Metrics import Metrics
-from anomaly.detector.parts.CompositeStreamDetector import Detector
+from anomaly.detector.parts.CompositeStreamDetector import Detector, DetectorWithModel
 from keras import Sequential
+from keras import models
 from keras.api.layers import LSTM, Dense, Dropout
 
 from anomaly.detector.parts.DataGenerator import DataGenerator
 
+
 # У AnomalyDetector и BehaviorDetector есть общая часть, необходим общий родитель
-class AnomalyDetector(Detector):
-    def __init__(self, detectors_count,
+class AnomalyDetector(DetectorWithModel):
+    def __init__(self,
+                 detectors_count,
                  lstm_size=128,
                  dropout_rate=0.2,
                  data_len=50,
                  epochs=15,
                  shift=10,
                  batch_size=1,
+                 path="model.h5",
+                 trained=False,
                  logger_level="INFO"):
-        super().__init__(logger_level=logger_level)
+        super().__init__(trained, path, logger_level=logger_level)
         self.model = self._init_model(lstm_size, dropout_rate)
         self.data_len = data_len
         self.detectors_count = detectors_count
         self.epochs = epochs
         self.shift = shift
         self.batch_size = batch_size
-        self.trained = False
+        self.load_model()
 
     def _init_model(self, lstm_size, dropout_rate):
         model = Sequential()
@@ -60,6 +67,7 @@ class AnomalyDetector(Detector):
                                  self.detectors_count,
                                  "anomaly")
         self.model.fit(data_gen, epochs=self.epochs, verbose=0, callbacks=[early_stopping])
+        self.save_model()
         self.trained = True
 
     def fine_tuning_checkpoint(self):

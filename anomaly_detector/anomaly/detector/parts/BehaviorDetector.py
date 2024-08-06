@@ -8,11 +8,11 @@ from keras.src.callbacks import EarlyStopping
 from keras.src.optimizers import Adam
 
 from anomaly.detector.metrics.Metrics import Metrics
-from anomaly.detector.parts.CompositeStreamDetector import Detector
+from anomaly.detector.parts.CompositeStreamDetector import Detector, DetectorWithModel
 from anomaly.detector.parts.DataGenerator import DataGenerator
 
 
-class BehaviorDetector(Detector):
+class BehaviorDetector(DetectorWithModel):
     """
     A behavior detector that uses a sequence-to-sequence LSTM model to detect anomalies in time series data.
 
@@ -20,9 +20,18 @@ class BehaviorDetector(Detector):
         model (Sequential): The LSTM model used for anomaly detection.
     """
 
-    def __init__(self, metrics_count, data_len=100, lstm_size=128, dropout_rate=0.2, mult=1, shift=10,
-                 anomaly_metric_name="origin", logger_level="INFO"):
-        super().__init__(logger_level=logger_level)
+    def __init__(self,
+                 metrics_count,
+                 path="model.h5",
+                 trained=False,
+                 data_len=100,
+                 lstm_size=128,
+                 dropout_rate=0.2,
+                 mult=1,
+                 shift=10,
+                 anomaly_metric_name="origin",
+                 logger_level="INFO"):
+        super().__init__(trained, path, logger_level=logger_level)
         self.data_len = data_len
         self.trained = False
         self.anomaly_metric_name = anomaly_metric_name
@@ -30,6 +39,7 @@ class BehaviorDetector(Detector):
         self.shift = shift
         self.metrics_count = metrics_count
         self.model = self._build_model(lstm_size, data_len, dropout_rate)
+        self.load_model()
 
     def detect(self, metrics: Metrics) -> List[float]:
         """
