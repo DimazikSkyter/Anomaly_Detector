@@ -4,6 +4,7 @@ import numpy as np
 
 class DataGenerator(keras.utils.Sequence):
     def __init__(self, metrics, data_len, shift, batch_size, metrics_count, y_key=None):
+        super().__init__()
         excluded = [y_key] if y_key else []
         self.metrics_count = metrics_count
         self.metrics = metrics
@@ -23,6 +24,7 @@ class DataGenerator(keras.utils.Sequence):
         X, y = self.__data_generation(batch_indices)
         return X, y
 
+    # shuffle only first index, array order will be safe
     def on_epoch_end(self):
         np.random.shuffle(self.indices)
 
