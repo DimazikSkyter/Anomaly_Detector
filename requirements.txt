@@ -1,0 +1,7 @@
+Flask
+PyYAML
+keras
+tensorflow
+numpy
+scikit-learn
+requests
