@@ -16,6 +16,8 @@ from anomaly.detector.parts.DataGenerator import DataGenerator
 
 # У AnomalyDetector и BehaviorDetector есть общая часть, необходим общий родитель
 class AnomalyDetector(DetectorWithModel):
+    ANOMALY_KEY = "anomaly"
+
     def __init__(self,
                  detectors_count,
                  lstm_size=128,
@@ -28,13 +30,14 @@ class AnomalyDetector(DetectorWithModel):
                  trained=False,
                  logger_level="INFO"):
         super().__init__(trained, path, logger_level=logger_level)
-        self.model = self._init_model(lstm_size, dropout_rate)
         self.data_len = data_len
         self.detectors_count = detectors_count
+        self.model = self._init_model(lstm_size, dropout_rate)
         self.epochs = epochs
         self.shift = shift
         self.batch_size = batch_size
         self.load_model()
+        self.logger.info("Anomaly detector successfully init.")
 
     def _init_model(self, lstm_size, dropout_rate):
         model = Sequential()
@@ -65,7 +68,7 @@ class AnomalyDetector(DetectorWithModel):
                                  self.shift,
                                  self.batch_size,
                                  self.detectors_count,
-                                 "anomaly")
+                                 self.anomaly_key)
         self.model.fit(data_gen, epochs=self.epochs, verbose=0, callbacks=[early_stopping])
         self.save_model()
         self.trained = True

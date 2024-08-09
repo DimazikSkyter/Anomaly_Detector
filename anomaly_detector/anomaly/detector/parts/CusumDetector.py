@@ -14,9 +14,11 @@ class CUSUMDetector(Detector):
         - threshold: float, decision interval.
         - drift: float, drift parameter.
         """
+        super().__init__(logger_level)
         self.threshold = threshold
         self.drift = drift
         self.window = window
+        self.logger.info("Cusum detector successfully init.")
 
     # оптимизировать и перенести в общую часть детектора
     def detect(self, metrics: Metrics) -> List[float]:

@@ -40,6 +40,7 @@ class BehaviorDetector(DetectorWithModel):
         self.metrics_count = metrics_count
         self.model = self._build_model(lstm_size, data_len, dropout_rate)
         self.load_model()
+        self.logger.info("Behavior detector successfully init.")
 
     def detect(self, metrics: Metrics) -> List[float]:
         """

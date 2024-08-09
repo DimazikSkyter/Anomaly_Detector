@@ -4,7 +4,6 @@ from typing import List, Dict
 import matplotlib.dates as mdates
 import numpy as np
 from matplotlib import pyplot as plt
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, QuantileTransformer
 
 
 class Metric:
@@ -78,7 +77,6 @@ class Metrics:
         self.union(another)
         self.copy_cut_off()
 
-    #А где таймстемпы?
     def union(self, m2: 'Metrics'):
         keys = self.series.keys()
 
@@ -89,8 +87,13 @@ class Metrics:
                 if values is None:
                     values = [None] * pads
                 self.series[key] += values
-
+            self.timestamps += m2.timestamps
             self._series_length += pads
+
+    def get_part(self, start_index, stop_index):
+        seria_ = {key: value[start_index: stop_index] for key, value in self.series.items()}
+        timestamps_ = self.timestamps[start_index:stop_index]
+        return self._new_metrics(seria_, timestamps_)
 
     def copy_cut_off(self, max_size=None, is_copy=False):
         if max_size:
@@ -116,7 +119,7 @@ class Metrics:
                 continue
             if normalized:
                 seria = self._scaler(np.array(seria))
-                seria = list(seria.reshape(-1)) # переделать это
+                seria = list(seria.reshape(-1))  # переделать это
             for index in range(len(seria)):
                 matrix[index].append(seria[index])
         return matrix
@@ -143,14 +146,25 @@ class Metrics:
         plt.legend()
         plt.show()
 
+    def add_seria(self, key: str, seria: List[float]):
+        if key in self.series.keys():
+            raise KeyError(f"Key {key} already exists.")
+        if seria is None:
+            raise ValueError(f"Seria {key} can't be None.")
+        expected_len = self.series_length()
+        income_len = len(seria)
+        if income_len != expected_len:
+            raise ValueError(f"Wrong size of new seria {income_len}, expected {expected_len}.")
+        self.series[key] = seria
+
     @staticmethod
     def _scaler(data):
-        #scaler_robust_ = RobustScaler()
-        #data_robusted_ = scaler_robust_.fit_transform(data.reshape(-1, 1))
-        #scaler_standard_ = StandardScaler()
-        #data_standardized_ = scaler_standard_.fit_transform(data.reshape(-1, 1))
-        #scaler_minmax_ = MinMaxScaler(feature_range=(0, 1))
-        #data_min_max_ = scaler_minmax_.fit_transform(data_standardized_)
+        # scaler_robust_ = RobustScaler()
+        # data_robusted_ = scaler_robust_.fit_transform(data.reshape(-1, 1))
+        # scaler_standard_ = StandardScaler()
+        # data_standardized_ = scaler_standard_.fit_transform(data.reshape(-1, 1))
+        # scaler_minmax_ = MinMaxScaler(feature_range=(0, 1))
+        # data_min_max_ = scaler_minmax_.fit_transform(data_standardized_)
         mean_ = np.mean(data)
         return data if np.abs(mean_) < 0.01 else data / mean_
 

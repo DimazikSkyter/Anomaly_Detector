@@ -76,7 +76,7 @@ class DetectorWithModel(Detector, ABC):
     def load_model(self):
         """Load the model from the specified path."""
         if not os.path.exists(self.path):
-            self.logger.warn("Model file not found %s", self.path)
+            self.logger.warning("Model file not found %s", self.path)
             return
         self.model = models.load_model(self.path)
         self.logger.info(f"Model loaded from {self.path}")

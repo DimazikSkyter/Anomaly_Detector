@@ -1,4 +1,4 @@
-logger_level: "INFO"
+logger_level: "DEBUG"
 detector_pacing_sec: 30
 
 storage_base_url: "http://example.com/base-url"

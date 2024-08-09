@@ -17,6 +17,7 @@ class MADDetector(Detector):
         self.data_max_size = data_max_size
         self.mad_values = []
         self.window = window
+        self.logger.info("MAD detector successfully init.")
 
     def detect(self, metrics: Metrics) -> List[float]:
         timeseries = self._prepare_data(metrics)
