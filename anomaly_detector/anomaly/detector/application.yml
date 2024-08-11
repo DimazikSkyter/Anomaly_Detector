@@ -14,10 +14,10 @@ behavior_detector_path: './behavior_detector'
 cusum_threshold: 0.01
 cusum_drift: 0.01
 cusum_window: 5
-anomaly_detector_lstm_size: 50
+anomaly_detector_lstm_size: 128
 anomaly_detector_dropout_rate: 0.2
-anomaly_detector_epochs: 10
-anomaly_detector_shift: 1
+anomaly_detector_epochs: 60
+anomaly_detector_shift: 10
 anomaly_detector_path: './anomaly_detector'
 corr_detector_ssa_window_size: 30
 corr_detector_ssa_group: [[0]]

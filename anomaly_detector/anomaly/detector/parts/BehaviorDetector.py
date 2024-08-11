@@ -99,21 +99,3 @@ class BehaviorDetector(DetectorWithModel):
         model.add(TimeDistributed(Dense(self.metrics_count)))
         model.compile(optimizer='adam', loss='mse')
         return model
-
-    def _windowed_data(self, metrics: Metrics):
-        """
-        A generator that yields batches of LSTM input sequences.
-        All data is normalized in this method
-        Yields:
-        - A tuple(X, X) with shape (data_len, num_series).
-        """
-        train_data = np.array(metrics.to_train_matrix(normalized=True))
-        num_windows = (train_data.shape[0] - self.shift) // self.data_len + 1
-
-        for i in range(num_windows):
-            start_idx = i * self.shift
-            end_idx = start_idx + self.data_len
-            window = train_data[start_idx:end_idx]
-            if window.shape[0] == self.data_len:
-                yield window, window
-

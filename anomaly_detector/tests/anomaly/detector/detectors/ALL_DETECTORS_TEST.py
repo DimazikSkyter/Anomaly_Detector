@@ -2,6 +2,8 @@ import unittest
 from typing import List
 
 import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
 
 from anomaly.detector.converter.MetricConverter import MetricConverter
 from anomaly.detector.metrics.Metrics import Metrics
@@ -14,6 +16,8 @@ from anomaly.detector.parts.WindowedMadDetector import MADDetector
 
 
 class MyTestCase(unittest.TestCase):
+    names = ["cpu_usage.csv", "resp_time.csv", "tps_finish.csv", "tps_master.csv"]
+
     def test_something(self):
         anomaly_seria_train = []
         anomaly_seria_test = []
@@ -60,19 +64,27 @@ class MyTestCase(unittest.TestCase):
 
         self.assertGreater(0.1, score)
 
-    def _generate_data(self) -> List[Metrics]:
-        names = ["all_detectors_test_data.json"]
+    def _generate_data(self, data_len=100) -> List[Metrics]:
         data: List[Metrics] = []
-        for name in names:
-            with open(name, "r") as file:
-                json_data = file.read()
-                metrics: Metrics = MetricConverter().convert(json_data, 100000, 30)
-                data.append(metrics)
+        for name in self.names:
+            df = pd.read_csv(name, sep=";", header=None)
+            Metrics([], 50000, )
         return data
 
     def _add_anomyly_seria(self, composite_result, anomaly_seria):
         pass
 
+    def test_plot_income_metrics(self):
+        fig, ax_tuple = plt.subplots(len(self.names), 1, figsize=(60, 30))
+        for index in range(len(self.names)):
+            df = pd.read_csv(self.names[index], sep=";", header=None)
+            ax = ax_tuple[index]
+            ax.plot(df[[1]][37000:], label="value")
+            ax.set_title(self.names[index])
+            ax.set_xlabel("timestamp")
+            ax.set_ylabel("Value")
+            ax.legend()
+        plt.show()
 
 if __name__ == '__main__':
     unittest.main()
