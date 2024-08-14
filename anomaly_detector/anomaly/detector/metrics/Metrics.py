@@ -23,6 +23,14 @@ class Metric:
             self.values = values
             self.timestamps = timestamps
 
+    def __str__(self):
+        return (f"Metric(name={self.name}, tags={self.tags}, "
+                f"values={self.values[:3]}{'...' if len(self.values) > 3 else ''}, "
+                f"timestamps={self.timestamps[:3]}{'...' if len(self.timestamps) > 3 else ''})")
+
+    def __repr__(self):
+        return (f"Metric(name={self.name!r}, tags={self.tags!r}, "
+                f"values={self.values!r}, timestamps={self.timestamps!r})")
 
 class Metrics:
     single_seria_max_size: int
@@ -49,6 +57,17 @@ class Metrics:
 
         self._validate_and_shortcut_list_sizes()
         self._validate_timestamp_size()
+
+    def __str__(self):
+        series_preview = {k: v[:3] for k, v in self.series.items()}
+        return (f"Metrics(single_seria_max_size={self.single_seria_max_size}, "
+                f"series={series_preview}, "
+                f"timestamps={self.timestamps[:3]}{'...' if len(self.timestamps) > 3 else ''})")
+
+    def __repr__(self):
+        return (f"Metrics(single_seria_max_size={self.single_seria_max_size!r}, "
+                f"series={self.series!r}, "
+                f"timestamps={self.timestamps!r})")
 
     def _validate_and_shortcut_list_sizes(self):
         if self.series:
@@ -114,8 +133,8 @@ class Metrics:
         if exclude is None:
             exclude = []
         matrix: List[List[float]] = [[] for _ in range(len(list(self.series.values())[0]))]
-        for seria in self.series.values():
-            if seria in exclude:
+        for key, seria in self.series.items():
+            if key in exclude:
                 continue
             if normalized:
                 seria = self._scaler(np.array(seria))
@@ -166,7 +185,7 @@ class Metrics:
         # scaler_minmax_ = MinMaxScaler(feature_range=(0, 1))
         # data_min_max_ = scaler_minmax_.fit_transform(data_standardized_)
         mean_ = np.mean(data)
-        return data if np.abs(mean_) < 0.01 else data / mean_
+        return data if np.abs(mean_) < 0.01 else (data / mean_ - 1)
 
     @staticmethod
     def _union_with_tags(name, tags):

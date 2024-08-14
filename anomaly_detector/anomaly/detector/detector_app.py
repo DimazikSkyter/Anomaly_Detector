@@ -63,6 +63,7 @@ class DetectorsProps:
     _anomaly_detector_epochs: int
     _anomaly_detector_shift: int
     _anomaly_detector_path: str
+    _anomaly_detector_seria_name: str
     _corr_detector_ssa_window_size: int
     _corr_detector_ssa_group: List[List[int]]
     _corr_detector_cov_window_size: int
@@ -157,6 +158,12 @@ class DetectorsProps:
 
     def set_anomaly_detector_path(self, anomaly_detector_path: str) -> None:
         self._anomaly_detector_path = anomaly_detector_path
+
+    def get_anomaly_detector_seria_name(self) -> str:
+        return self._anomaly_detector_seria_name
+
+    def set_anomaly_detector_seria_name(self, anomaly_detector_seria_name: str) -> None:
+        self._anomaly_detector_seria_name = anomaly_detector_seria_name
 
     def get_corr_detector_ssa_window_size(self) -> int:
         return self._corr_detector_ssa_window_size
@@ -500,6 +507,7 @@ class App:
 
     def _init_anomaly_detector(self) -> AnomalyDetector:
         return AnomalyDetector(4,
+                               self.app_props.get_detectors_props().get_anomaly_detector_seria_name(),
                                self.app_props.get_detectors_props().get_anomaly_detector_lstm_size(),
                                self.app_props.get_detectors_props().get_anomaly_detector_dropout_rate(),
                                self.app_props.get_detectors_props().get_data_len(),

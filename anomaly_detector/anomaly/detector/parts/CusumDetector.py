@@ -20,10 +20,9 @@ class CUSUMDetector(Detector):
         self.window = window
         self.logger.info("Cusum detector successfully init.")
 
-    # оптимизировать и перенести в общую часть детектора
     def detect(self, metrics: Metrics) -> List[float]:
         result = []
-        for seria in metrics:
+        for seria in metrics.series.values():
             single_result = self.detect_single_seria(seria)
             if result:
                 for index in range(len(single_result)):
@@ -56,7 +55,7 @@ class CUSUMDetector(Detector):
         window = self.window
         cusum_mult = []
 
-        for i in range(1, len(normalized_data)):
+        for i in range(0, len(normalized_data)):
 
             # pos_window = pos_cusum[max(0, i - 1 - window):i - 1]
             # sum_positive = sum(pos_window) / max(1, len(pos_window))
@@ -73,7 +72,7 @@ class CUSUMDetector(Detector):
             decrement = max(0, decrement - delta - self.drift)
             mult = increment * decrement * 25
 
-            print(f"current mult {mult}")
+            self.logger.debug(f"current mult %s", mult)
             cusum_mult.append(mult / self.threshold)
 
             if mult > self.threshold:

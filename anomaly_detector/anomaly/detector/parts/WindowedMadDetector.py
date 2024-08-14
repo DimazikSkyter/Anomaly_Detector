@@ -42,7 +42,7 @@ class MADDetector(Detector):
 
     def _calc_local_mad_score(self, data, global_mad) -> List[float]:
         window = self.window
-        mads = [global_mad] * window
+        mads = [global_mad] * (window - 1)
         for i in range(len(data) - window + 1):
             mad = MADDetector._calculate_mad_in_window(data[i: i + window])
             mads.append(mad)

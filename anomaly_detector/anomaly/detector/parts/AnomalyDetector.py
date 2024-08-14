@@ -20,6 +20,7 @@ class AnomalyDetector(DetectorWithModel):
 
     def __init__(self,
                  detectors_count,
+                 anomaly_key,
                  lstm_size=128,
                  dropout_rate=0.2,
                  data_len=50,
@@ -37,6 +38,7 @@ class AnomalyDetector(DetectorWithModel):
         self.shift = shift
         self.batch_size = batch_size
         self.load_model()
+        self.anomaly_key = anomaly_key
         self.logger.info("Anomaly detector successfully init.")
 
     def _init_model(self, lstm_size, dropout_rate):
@@ -47,7 +49,7 @@ class AnomalyDetector(DetectorWithModel):
                        input_shape=(self.data_len, self.detectors_count)))
         model.add(Dropout(dropout_rate))
         model.add(LSTM(lstm_size // 2, activation='relu', return_sequences=True))
-        model.add(Dense(self.data_len, activation='sigmoid'))
+        model.add(Dense(1, activation='sigmoid'))
         model.compile(optimizer='adam', loss='binary_crossentropy')
         return model
 
@@ -57,9 +59,10 @@ class AnomalyDetector(DetectorWithModel):
         if metrics.series_length() < self.data_len:
             raise IndexError(f"Wait metric size {self.data_len}, but income {metrics.series_length()}.")
         income_data_ = self._prepare_data(metrics)
+        self.logger.debug("Anomaly detector income data after prepare %s", income_data_)
         predicted_values_ = self.model.predict(np.array(income_data_))
-        self.logger.debug("Predicted values is %s", predicted_values_)
-        return list(predicted_values_)
+        self.logger.debug("Anomaly detector predicted values is %s", predicted_values_)
+        return predicted_values_[0].flatten().tolist()
 
     def train(self, metrics: Metrics):
         early_stopping = EarlyStopping(monitor='loss', patience=5, restore_best_weights=True)
@@ -70,8 +73,8 @@ class AnomalyDetector(DetectorWithModel):
                                  self.detectors_count,
                                  self.anomaly_key)
         self.model.fit(data_gen, epochs=self.epochs, verbose=0, callbacks=[early_stopping])
-        self.save_model()
         self.trained = True
+        self.save_model()
 
     def fine_tuning_checkpoint(self):
         pass

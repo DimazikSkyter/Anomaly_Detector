@@ -1,5 +1,4 @@
 import logging
-import logging
 import os
 from abc import ABC, abstractmethod
 from enum import Enum, auto
@@ -53,21 +52,27 @@ class Detector(ABC):
 
 class DetectorWithModel(Detector, ABC):
 
-    def __init__(self, trained, path, logger_name=None, logger_level="INFO",
+    def __init__(self, trained, path, save_enable=False, logger_name=None, logger_level="INFO",
                  log_format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"):
         super().__init__(logger_name, logger_level, log_format)
         self.trained = trained
         self.path = path
+        self.save_enable = save_enable
 
     @abstractmethod
     def train(self, metrics: Metrics):
         pass
+
+    def can_trained(self) -> bool:
+        return True
 
     def has_model(self):
         return True
 
     def save_model(self):
         """Save the model to the specified path."""
+        if not self.save_enable:
+            return
         if not self.trained:
             raise ValueError("Model is not trained yet. Train the model before saving.")
         self.model.save(self.path)

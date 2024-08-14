@@ -1,11 +1,16 @@
 import keras
 import numpy as np
+import logging
+
+from anomaly.detector.metrics.Metrics import Metrics
 
 
 class DataGenerator(keras.utils.Sequence):
-    def __init__(self, metrics, data_len, shift, batch_size, metrics_count, y_key=None):
+    def __init__(self, metrics: Metrics, data_len, shift, batch_size, metrics_count, y_key=None, logger_level="INFO",
+                 log_format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"):
         super().__init__()
         excluded = [y_key] if y_key else []
+
         self.metrics_count = metrics_count
         self.metrics = metrics
         self.data_len = data_len
@@ -15,6 +20,16 @@ class DataGenerator(keras.utils.Sequence):
         self.indices = np.arange((self.train_data.shape[0] - self.shift) // self.data_len + 1)
         self.on_epoch_end()
         self.y_key = y_key
+
+        logger_name = self.__class__.__name__
+        self.logger = logging.getLogger(logger_name)
+        self.logger.setLevel(logger_level)
+
+        ch = logging.StreamHandler()
+        ch.setLevel(logger_level)
+        formatter = logging.Formatter(log_format)
+        ch.setFormatter(formatter)
+        self.logger.addHandler(ch)
 
     def __len__(self):
         return int(np.floor(len(self.indices) / self.batch_size))
@@ -36,12 +51,14 @@ class DataGenerator(keras.utils.Sequence):
         :return:
         """
         X = np.empty((self.batch_size, self.data_len, self.metrics_count))
-        y = np.empty((self.batch_size, self.data_len, self.metrics_count if self.y_key else 1))
+        y = np.empty((self.batch_size, self.data_len, 1 if self.y_key else self.metrics_count))
         for i, idx in enumerate(batch_indices):
             start_idx = idx * self.shift
             end_idx = start_idx + self.data_len
             window = self.train_data[start_idx:end_idx]
             if window.shape[0] == self.data_len:
                 X[i,] = window
-                y[i,] = self.metrics.series[self.y_key] if self.y_key else window
+                y[i,] = (np.array(self.metrics.series[self.y_key])
+                         .reshape(y.shape[1], y.shape[2])) if self.y_key else window
+        self.logger.debug("Outcome generator data X=\n%s\n,y=\n%s", X[0][:3], y[0][:3])
         return X, y
