@@ -110,7 +110,7 @@ class BehaviorDetectorTests(unittest.TestCase):
     def test_with_data(self):
         data_len = 100
         behavior_detector = BehaviorDetector(4, data_len=100, lstm_size=512, dropout_rate=0.4, logger_level="DEBUG")
-        data: List[Metrics] = self._generate_data(data_len, 5000)
+        data: List[Metrics] = self._generate_data(data_len, 100000)
 
         split_index = int(0.75 * len(data))
 

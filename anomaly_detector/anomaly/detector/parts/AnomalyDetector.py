@@ -4,6 +4,7 @@ import numpy as np
 from typing import List
 
 from keras.src.callbacks import EarlyStopping
+from keras.src.optimizers import Adam
 
 from anomaly.detector.metrics.Metrics import Metrics
 from anomaly.detector.parts.CompositeStreamDetector import Detector, DetectorWithModel
@@ -12,6 +13,7 @@ from keras import models
 from keras.api.layers import LSTM, Dense, Dropout
 
 from anomaly.detector.parts.DataGenerator import DataGenerator
+from keras import regularizers
 
 
 # У AnomalyDetector и BehaviorDetector есть общая часть, необходим общий родитель
@@ -43,14 +45,18 @@ class AnomalyDetector(DetectorWithModel):
 
     def _init_model(self, lstm_size, dropout_rate):
         model = Sequential()
-        model.add(LSTM(lstm_size,
+        model.add(LSTM(lstm_size * 2,
                        activation='relu',
                        return_sequences=True,
-                       input_shape=(self.data_len, self.detectors_count)))
+                       input_shape=(self.data_len, self.detectors_count),
+                       kernel_regularizer=regularizers.l1_l2(l1=0.02, l2=0.001)))
         model.add(Dropout(dropout_rate))
-        model.add(LSTM(lstm_size // 2, activation='relu', return_sequences=True))
+        model.add(LSTM(lstm_size, activation='relu', return_sequences=True, kernel_regularizer=regularizers.l1_l2(l1=0.02, l2=0.001)))
+        model.add(Dropout(dropout_rate))
+        model.add(LSTM(lstm_size // 2, activation='relu', return_sequences=True, kernel_regularizer=regularizers.l1_l2(l1=0.02, l2=0.001)))
+        model.add(LSTM(lstm_size, activation='relu', return_sequences=True, kernel_regularizer=regularizers.l1_l2(l1=0.02, l2=0.001)))
         model.add(Dense(1, activation='sigmoid'))
-        model.compile(optimizer='adam', loss='binary_crossentropy')
+        model.compile(optimizer=Adam(learning_rate=0.0005, clipvalue=1.0), loss='binary_crossentropy')
         return model
 
     def detect(self, metrics: Metrics) -> List[float]:

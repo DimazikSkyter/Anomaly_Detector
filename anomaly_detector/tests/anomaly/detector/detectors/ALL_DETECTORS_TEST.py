@@ -20,9 +20,10 @@ class MyTestCase(unittest.TestCase):
 
     def test_something(self):
         data_len = 100
-        anomaly_seria: List[float] = self._generate_anomaly_seria()[:3000]
-        anomaly_detector = AnomalyDetector(4, self.anomaly_seria_name, data_len=100, logger_level="DEBUG")
-        behavior_detector = BehaviorDetector(4, data_len=100, logger_level="DEBUG")
+        anomaly_seria: List[float] = self._generate_anomaly_seria()
+        anomaly_detector = AnomalyDetector(4, self.anomaly_seria_name, lstm_size=512, dropout_rate=0.4,
+                                           data_len=100, epochs=30, logger_level="DEBUG")
+        behavior_detector = BehaviorDetector(4, lstm_size=1024, dropout_rate=0.4, data_len=100, logger_level="DEBUG")
         cusum_detector = CUSUMDetector(1, 0.01, 10, logger_level="ERROR")
         correlation_detector = CorrelationDetector(7, [[0]], 10,
                                                    "tps_master.csv", logger_level="ERROR")
@@ -33,7 +34,7 @@ class MyTestCase(unittest.TestCase):
             correlation_detector,
             mad_detector], logger_level="ERROR")
 
-        data: List[Metrics] = self._generate_data(data_len, 3000)
+        data: List[Metrics] = self._generate_data(data_len, 300000)
 
         split_index = int(0.75 * len(data))
 
@@ -113,7 +114,7 @@ class MyTestCase(unittest.TestCase):
         for index in range(len(self.names)):
             df = pd.read_csv(self.names[index], sep=";", header=None)
             ax = ax_tuple[index]
-            ax.plot(df[[1]][42700:42750], label="value")
+            ax.plot(df[[1]][32500:], label="value")
             ax.set_title(self.names[index])
             ax.set_xlabel("timestamp")
             ax.set_ylabel("Value")
