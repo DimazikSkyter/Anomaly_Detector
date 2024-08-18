@@ -24,7 +24,7 @@ class BehaviorDetectorTests(unittest.TestCase):
 
         metrics_train: Metrics = MetricConverter.convert(json_loads_train, 1000, 20)
 
-        beh_detector = BehaviorDetector(4, data_len=50, shift=5, lstm_size=256, mult=2, dropout_rate=0.3,
+        beh_detector = BehaviorDetector(4, data_len=100, shift=15, lstm_size=256, mult=2, dropout_rate=0.3,
                                         logger_level="DEBUG")
         beh_detector.train(metrics_train, epochs=60)
 
@@ -107,9 +107,38 @@ class BehaviorDetectorTests(unittest.TestCase):
         plt.tight_layout()
         plt.show()
 
-    def test_with_data(self):
+    def test_with_data_1(self):
         data_len = 100
-        behavior_detector = BehaviorDetector(4, data_len=100, lstm_size=512, dropout_rate=0.4, logger_level="DEBUG")
+        behavior_detector = BehaviorDetector(4, data_len=100, shift=25, lstm_size=512, dropout_rate=0.4, logger_level="DEBUG")
+        data: List[Metrics] = self._generate_data(data_len, 5000)
+
+        split_index = int(0.75 * len(data))
+
+        train = data[:split_index]
+        test = data[split_index:]
+
+        iteration = 0
+        result = []
+
+        for data_train in train:
+            behavior_detector.train(data_train, epochs=20)
+
+        for test_data in test:
+            result_single = behavior_detector.detect(test_data)
+            if result:
+                result += result_single[int(data_len / 2):]
+            else:
+                result += result_single
+
+        print(f"diff {result}")
+
+        plt.plot(result, label="result")
+        plt.legend()
+        plt.show()
+
+    def test_with_data_2(self):
+        data_len = 100
+        behavior_detector = BehaviorDetector(4, data_len=100, lstm_size=512, dropout_rate=0.4, model_type=2, logger_level="DEBUG")
         data: List[Metrics] = self._generate_data(data_len, 100000)
 
         split_index = int(0.75 * len(data))
@@ -135,6 +164,7 @@ class BehaviorDetectorTests(unittest.TestCase):
         plt.plot(result, label="result")
         plt.legend()
         plt.show()
+
     def _generate_data(self, data_len=100, max_size=1000) -> List[Metrics]:
         data: List[Metrics] = []
 

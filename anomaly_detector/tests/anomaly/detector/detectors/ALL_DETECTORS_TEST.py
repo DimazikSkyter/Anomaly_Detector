@@ -114,7 +114,7 @@ class MyTestCase(unittest.TestCase):
         for index in range(len(self.names)):
             df = pd.read_csv(self.names[index], sep=";", header=None)
             ax = ax_tuple[index]
-            ax.plot(df[[1]][32500:], label="value")
+            ax.plot(df[[1]][3750:5000], label="value")
             ax.set_title(self.names[index])
             ax.set_xlabel("timestamp")
             ax.set_ylabel("Value")
