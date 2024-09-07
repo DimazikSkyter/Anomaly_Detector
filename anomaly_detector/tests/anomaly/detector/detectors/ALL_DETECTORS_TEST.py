@@ -20,7 +20,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_something(self):
         data_len = 100
-        anomaly_seria: List[float] = self._generate_anomaly_seria()
+        anomaly_seria: List[float] = self._generate_anomaly_seria()[:6800]
         anomaly_detector = AnomalyDetector(4, self.anomaly_seria_name, lstm_size=512, dropout_rate=0.4,
                                            data_len=100, epochs=30, logger_level="DEBUG")
         behavior_detector = BehaviorDetector(4, lstm_size=1024, dropout_rate=0.4, data_len=100, logger_level="DEBUG")
@@ -34,7 +34,7 @@ class MyTestCase(unittest.TestCase):
             correlation_detector,
             mad_detector], logger_level="ERROR")
 
-        data: List[Metrics] = self._generate_data(data_len, 300000)
+        data: List[Metrics] = self._generate_data(data_len, 6800)
 
         split_index = int(0.75 * len(data))
 
@@ -114,7 +114,7 @@ class MyTestCase(unittest.TestCase):
         for index in range(len(self.names)):
             df = pd.read_csv(self.names[index], sep=";", header=None)
             ax = ax_tuple[index]
-            ax.plot(df[[1]][3750:5000], label="value")
+            ax.plot(df[[1]][5100:6800], label="value")
             ax.set_title(self.names[index])
             ax.set_xlabel("timestamp")
             ax.set_ylabel("Value")

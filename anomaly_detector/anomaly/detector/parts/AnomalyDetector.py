@@ -6,13 +6,13 @@ from typing import List
 from keras.src.callbacks import EarlyStopping
 from keras.src.optimizers import Adam
 
+from anomaly.detector.generators.DataGenerator import DataGenerator
 from anomaly.detector.metrics.Metrics import Metrics
 from anomaly.detector.parts.CompositeStreamDetector import Detector, DetectorWithModel
 from keras import Sequential
 from keras import models
 from keras.api.layers import LSTM, Dense, Dropout
 
-from anomaly.detector.parts.DataGenerator import DataGenerator
 from keras import regularizers
 
 
@@ -77,6 +77,7 @@ class AnomalyDetector(DetectorWithModel):
                                  self.shift,
                                  self.batch_size,
                                  self.detectors_count,
+                                 None,
                                  self.anomaly_key)
         self.model.fit(data_gen, epochs=self.epochs, verbose=0, callbacks=[early_stopping])
         self.trained = True
