@@ -46,7 +46,7 @@ class MyTestCase(unittest.TestCase):
         metrics.plot()
 
         cov_ = covariance_detector.detect(metrics)
-        self._plot(timestamps, cov_)
+        self._plot_series(master_metric.values, metric_1.values, metric_2.values, cov_)
 
     @staticmethod
     def _generate_seria(size, mult, amplitude, seasonal_period, is_xpow2=False):
@@ -58,6 +58,21 @@ class MyTestCase(unittest.TestCase):
         noise_std = 0.2 * amplitude  # 10% of the amplitude
         noise = np.random.normal(0, noise_std, size)
         return trend + seasonal + noise
+
+    @staticmethod
+    def _plot_series(f1, f2, f3, cor):
+        fig, ax = plt.subplots(2, 1, figsize=(24, 12))
+        ax_f = ax[0]
+        ax_a = ax[1]
+        ax_f.plot(f1, label="f1")
+        ax_f.plot(f2, label="f2")
+        ax_f.plot(f3, label="f3")
+        ax_f.legend()
+        ax_f.set_title("Series")
+        ax_a.plot(cor, linestyle="-", label="MDC metric")
+        ax_a.set_title("Anomalies")
+        ax_a.legend()
+        plt.show()
 
     @staticmethod
     def _plot(x, y):

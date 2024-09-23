@@ -1,19 +1,15 @@
-import os
-
-import numpy as np
 from typing import List
 
+import numpy as np
+from keras import Sequential
+from keras import regularizers
+from keras.api.layers import LSTM, Dense, Dropout
 from keras.src.callbacks import EarlyStopping
-from keras.src.optimizers import Adam
+from keras.src.optimizers import SGD
 
 from anomaly.detector.generators.DataGenerator import DataGenerator
 from anomaly.detector.metrics.Metrics import Metrics
-from anomaly.detector.parts.CompositeStreamDetector import Detector, DetectorWithModel
-from keras import Sequential
-from keras import models
-from keras.api.layers import LSTM, Dense, Dropout
-
-from keras import regularizers
+from anomaly.detector.parts.CompositeStreamDetector import DetectorWithModel
 
 
 # У AnomalyDetector и BehaviorDetector есть общая часть, необходим общий родитель
@@ -49,14 +45,17 @@ class AnomalyDetector(DetectorWithModel):
                        activation='relu',
                        return_sequences=True,
                        input_shape=(self.data_len, self.detectors_count),
-                       kernel_regularizer=regularizers.l1_l2(l1=0.02, l2=0.001)))
+                       kernel_regularizer=regularizers.l1_l2(l1=0.01, l2=0.0005)))
         model.add(Dropout(dropout_rate))
-        model.add(LSTM(lstm_size, activation='relu', return_sequences=True, kernel_regularizer=regularizers.l1_l2(l1=0.02, l2=0.001)))
+        model.add(LSTM(lstm_size, activation='tanh', return_sequences=True,
+                       kernel_regularizer=regularizers.l1_l2(l1=0.01, l2=0.0005)))
         model.add(Dropout(dropout_rate))
-        model.add(LSTM(lstm_size // 2, activation='relu', return_sequences=True, kernel_regularizer=regularizers.l1_l2(l1=0.02, l2=0.001)))
-        model.add(LSTM(lstm_size, activation='relu', return_sequences=True, kernel_regularizer=regularizers.l1_l2(l1=0.02, l2=0.001)))
+        model.add(LSTM(lstm_size // 2, activation='tanh', return_sequences=True,
+                       kernel_regularizer=regularizers.l1_l2(l1=0.01, l2=0.0005)))
+        model.add(LSTM(lstm_size, activation='tanh', return_sequences=True,
+                       kernel_regularizer=regularizers.l1_l2(l1=0.01, l2=0.0005)))
         model.add(Dense(1, activation='sigmoid'))
-        model.compile(optimizer=Adam(learning_rate=0.0005, clipvalue=1.0), loss='binary_crossentropy')
+        model.compile(optimizer=SGD(learning_rate=0.001, momentum=0.9, clipvalue=1.0), loss='mse')
         return model
 
     def detect(self, metrics: Metrics) -> List[float]:
@@ -71,7 +70,7 @@ class AnomalyDetector(DetectorWithModel):
         return predicted_values_[0].flatten().tolist()
 
     def train(self, metrics: Metrics):
-        early_stopping = EarlyStopping(monitor='loss', patience=5, restore_best_weights=True)
+        early_stopping = EarlyStopping(monitor='loss', patience=3, restore_best_weights=True)
         data_gen = DataGenerator(metrics,
                                  self.data_len,
                                  self.shift,

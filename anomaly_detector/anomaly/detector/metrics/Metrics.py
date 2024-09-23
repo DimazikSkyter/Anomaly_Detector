@@ -32,6 +32,7 @@ class Metric:
         return (f"Metric(name={self.name!r}, tags={self.tags!r}, "
                 f"values={self.values!r}, timestamps={self.timestamps!r})")
 
+
 class Metrics:
     single_seria_max_size: int
     series: Dict[str, List[float]]
@@ -189,7 +190,7 @@ class Metrics:
 
     @staticmethod
     def _union_with_tags(name, tags):
-        tags_string_ = ", ".join([f'{key}="{value}"' for key, value in tags.items()])
+        tags_string_ = ", ".join([f'{key}="{value}"' for key, value in tags.items()]) if tags else ""
         return f'{name}{{{tags_string_}}}'
 
     @staticmethod

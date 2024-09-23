@@ -6,15 +6,15 @@ storage_steps: 10
 
 data_len: 1000
 mad_detector_window: 5
-behavior_detector_lstm_size: 50
-behavior_detector_dropout_rate: 0.2
-behavior_detector_train_shift: 1
+behavior_detector_lstm_size: 512
+behavior_detector_dropout_rate: 0.4
+behavior_detector_train_shift: 10
 behavior_detector_anomaly_metric_name: 'anomaly_metric'
 behavior_detector_path: './behavior_detector'
 cusum_threshold: 0.01
 cusum_drift: 0.01
 cusum_window: 5
-anomaly_detector_lstm_size: 128
+anomaly_detector_lstm_size: 512
 anomaly_detector_dropout_rate: 0.2
 anomaly_detector_epochs: 60
 anomaly_detector_shift: 10

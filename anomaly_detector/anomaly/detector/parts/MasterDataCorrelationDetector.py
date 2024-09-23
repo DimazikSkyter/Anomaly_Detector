@@ -19,11 +19,11 @@ class CorrelationDetector(Detector):
     def detect(self, metrics: Metrics) -> List[float]:
         origin_metric_seria_ = metrics.series[self.origin_metric_name]
         origin_trend_ = pd.Series(self._extract_trend(self.origin_metric_name, origin_metric_seria_))
-        self.logger.debug("Original trend is {}", origin_trend_)
+#        self.logger.debug("Original trend is {}", origin_trend_[self.origin_metric_name]) пофиксить
         trends_ = [(key, pd.Series(self._extract_trend(key, metric))) for key, metric in metrics.series.items() if
                    key != self.origin_metric_name]
         return self._collapse_vectors(
-            [self.cal_windowed_covariance(origin_trend_, metric_trend, key) for key, metric_trend in trends_])
+            [self._cal_windowed_correlation(origin_trend_, metric_trend, key) for key, metric_trend in trends_])
 
     def _extract_trend(self, metric_name, timeseries: List[float]) -> List[float]:
         timeseries_trend_ = self.ssa.fit_transform(np.array(timeseries).reshape(1, -1))[0]
@@ -33,7 +33,7 @@ class CorrelationDetector(Detector):
                           timeseries_trend_)
         return self.min_max_scaler(timeseries_trend_)
 
-    def cal_windowed_covariance(self, v1, v2, key):
+    def _cal_windowed_correlation(self, v1, v2, key):
         rolling_cov_ = v1.rolling(window=self.cov_window_size).corr(v2)
         self.logger.debug("Result covariance vector for original metric "
                           "%s and key %s is %s",

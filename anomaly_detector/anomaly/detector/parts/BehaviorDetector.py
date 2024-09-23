@@ -208,14 +208,14 @@ class BehaviorDetector(DetectorWithModel):
 
         combined = Concatenate(axis=-1)([main_part_model, xgb_input])
 
+        combined = LSTM(lstm_size, activation='relu', return_sequences=True,
+                        kernel_regularizer=regularizers.l1_l2(l1=0.01, l2=0.001))(combined)
+
         output = TimeDistributed(Dense(self.metrics_count))(combined)
 
         model = Model(inputs=[lstm_input_, xgb_input], outputs=output)
         model.compile(optimizer=Adam(learning_rate=0.0005, clipvalue=1.0), loss='mse')
         return model
-
-    def __prepare_xgb_regressor_data(self):
-        pass
 
     @staticmethod
     def _xgb_regressor_model():
