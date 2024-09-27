@@ -68,7 +68,7 @@ class MyTestCase(unittest.TestCase):
         self._plot_series(f1, f2, f3, anomaly_, anomaly_result_seria_)
 
     def _plot_series(self, f1, f2, f3, ae, ar):
-        fig, ax = plt.subplots(2, 1, figsize=(20, 16))
+        fig, ax = plt.subplots(2, 1, figsize=(22, 12))
         ax_f = ax[0]
         ax_a = ax[1]
         ax_f.plot(f1, label="f1")
