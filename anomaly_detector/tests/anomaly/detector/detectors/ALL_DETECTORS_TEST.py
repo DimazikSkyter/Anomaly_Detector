@@ -22,7 +22,7 @@ class MyTestCase(unittest.TestCase):
         data_len = 100
         anomaly_seria: List[float] = self._generate_anomaly_seria()[:1000]
         anomaly_detector = AnomalyDetector(4, self.anomaly_seria_name, lstm_size=512, dropout_rate=0.4,
-                                           data_len=100, epochs=30, logger_level="INFO")
+                                           data_len=100, logger_level="INFO")
         behavior_detector = BehaviorDetector(4, lstm_size=1024, dropout_rate=0.4, data_len=100, model_type=3, logger_level="INFO")
         cusum_detector = CUSUMDetector(1, 0.01, 10, logger_level="ERROR")
         correlation_detector = CorrelationDetector(7, [[0]], 10,

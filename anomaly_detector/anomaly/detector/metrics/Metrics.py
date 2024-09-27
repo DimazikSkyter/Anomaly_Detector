@@ -93,9 +93,39 @@ class Metrics:
             self._series_length = len(self.series[list(self.series.keys())[0]])
         return self._series_length
 
+    def merge_new(self, m2: 'Metrics', save_max_size=False, new_size=None):
+        keys = self.series.keys()
+        if check_any_key(keys, m2.series.keys()):
+            grid_3d_cur_ts_ = [(ts, a, idx) for a in [0] for idx, ts in enumerate(self.timestamps)]
+            grid_3d_m2_ts_ = [(ts, a, idx) for a in [1] for idx, ts in enumerate(m2.timestamps)]
+            #it's considered that the values for the same TS for the same Metric but in diff Metrics are the same
+            merged_grid_list_ = self.merge_grids_(grid_3d_cur_ts_, grid_3d_m2_ts_)
+            final_ts_grid_ = sorted(merged_grid_list_, key=lambda x: x[0])
+            final_size_ = len(final_ts_grid_)
+            new_series_ = {}
+            for key in keys:
+                values = m2.series.get(key, None)
+                if values is not None:
+                    new_series_[key] = [self._get_current_metrics(self.series[key], values, metrics_resolver)[metrics_idx]
+                                       for _, metrics_resolver, metrics_idx in final_ts_grid_]
+                else:
+                    new_series_[key] = [None] * final_size_
+            timestamps_ = [x for x, _, _ in final_ts_grid_]
+            if save_max_size:
+                self._cut_new(new_series_, new_size)
+                timestamps_ = timestamps_[:self.single_seria_max_size]
+            return Metrics(None,
+                           self.single_seria_max_size if save_max_size else final_size_,
+                           new_series_,
+                           timestamps_)
+        else:
+            raise KeyError(f"Nothing to merge! "
+                           f"Current keys '{self.series.keys()}' and income keys '{m2.series.keys()}'")
+
+
     def merge(self, another: 'Metrics'):
         self.union(another)
-        self.copy_cut_off()
+        return self.copy_cut_off()
 
     def union(self, m2: 'Metrics'):
         keys = self.series.keys()
@@ -103,7 +133,7 @@ class Metrics:
         if check_any_key(keys, m2.series.keys()):
             pads = m2.series_length()
             for key in keys:
-                values = m2.series[key]
+                values = m2.series.get(key, None)
                 if values is None:
                     values = [None] * pads
                 self.series[key] += values
@@ -115,7 +145,7 @@ class Metrics:
         timestamps_ = self.timestamps[start_index:stop_index]
         return self._new_metrics(seria_, timestamps_)
 
-    def copy_cut_off(self, max_size=None, is_copy=False):
+    def copy_cut_off(self, necessarily=False, max_size=None, is_copy=False):
         if max_size:
             self.single_seria_max_size = max_size
         if self._series_length > self.single_seria_max_size:
@@ -128,7 +158,8 @@ class Metrics:
             return self._new_metrics(self.series, self.timestamps) \
                 if is_copy \
                 else self
-        raise IndexError("Wrong max_size error nothing to cut.")
+        if necessarily:
+            raise IndexError("Wrong max_size error nothing to cut.")
 
     def to_train_matrix(self, exclude=None, normalized=False) -> List[List[float]]:
         if exclude is None:
@@ -177,6 +208,11 @@ class Metrics:
             raise ValueError(f"Wrong size of new seria {income_len}, expected {expected_len}.")
         self.series[key] = seria
 
+
+    @staticmethod
+    def _get_current_metrics(list1, list2, resolver):
+        return list1 if resolver == 0 else list2
+
     @staticmethod
     def _scaler(data):
         # scaler_robust_ = RobustScaler()
@@ -209,6 +245,20 @@ class Metrics:
         end_index = end_index_array[len(end_index_array) - 1]
         return start_index, end_index
 
+    @staticmethod
+    def merge_grids_(cur_ts_dict_, m2_ts_dict_):
+        merged_grid_ = []
+        ts1 = []
+        for ts, a, idx in cur_ts_dict_:
+            merged_grid_.append((ts, a, idx))
+            ts1.append(ts)
+
+        for ts, a, idx in m2_ts_dict_:
+            if ts not in ts1:
+                merged_grid_.append((ts, a, idx))
+        return merged_grid_
+
+
     @classmethod
     def get_last_updated(cls):
         return cls._last_updated
@@ -221,6 +271,12 @@ class Metrics:
         self.timestamps = new_timestamps
         self._series_length = self.single_seria_max_size
         return self
+
+    def _cut_new(self, new_series_, new_size):
+        for key, value in new_series_:
+            new_series_[key] = new_series_[key][:new_size] \
+                if new_size \
+                else new_series_[key][:self.single_seria_max_size]
 
 
 def split(values_timestamp_list):
