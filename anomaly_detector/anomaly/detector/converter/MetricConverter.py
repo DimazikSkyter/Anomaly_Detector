@@ -2,8 +2,7 @@ from typing import List
 
 from anomaly.detector.metrics.Metrics import Metrics, Metric
 
-
-# добавить разделение путей по базам
+#todo split to prometheus and victoria metrics
 class MetricConverter:
 
     @staticmethod
@@ -40,3 +39,31 @@ class MetricConverter:
         metric.values = new_values
         metric.timestamps = new_timestamps
         return metric
+
+
+    @staticmethod
+    def to_json(metrics: Metrics):
+        metrics_data = []
+
+        for metric_name, values in metrics.series.items():
+            if not values:
+                continue
+
+            name_parts = metric_name.split("{", 1)
+            base_name = name_parts[0]
+            tags_str = name_parts[1][:-1] if len(name_parts) > 1 else ""  # Remove trailing '}'
+
+            tags = {}
+            if tags_str:
+                for tag in tags_str.split(","):
+                    key, value = tag.split("=")
+                    tags[key.strip()] = value.strip().strip('"')  # Remove extra quotes
+
+            metric_entry = {
+                "metric": {"__name__": base_name, **tags},
+                "values": values,
+                "timestamps": metrics.timestamps
+            }
+            metrics_data.append(metric_entry)
+
+        return metrics_data

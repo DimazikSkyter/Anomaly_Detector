@@ -27,7 +27,7 @@ class Detector(ABC):
     def has_model(self):
         return False
 
-    def get_class_name(self):
+    def get_class_name(self) -> str:
         return type(self).__name__
 
     def is_trained(self) -> bool:

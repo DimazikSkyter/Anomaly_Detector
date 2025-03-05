@@ -4,12 +4,13 @@ import os
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from http.cookiejar import debug
 from typing import List
 
 import yaml
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template, make_response
 
-from anomaly.detector.clients.StorageClients import VictoriaMetricsClient
+from anomaly.detector.storage.StorageClients import VictoriaMetricsClient
 from anomaly.detector.converter.MetricConverter import MetricConverter
 from anomaly.detector.metrics.Metrics import Metrics
 from anomaly.detector.parts.AnomalyDetector import AnomalyDetector
@@ -21,6 +22,13 @@ from anomaly.detector.parts.WindowedMadDetector import MADDetector
 
 
 # Пока что все метрики участвуют во всех детекторах, однако это нужно переделать
+
+@dataclass
+class Datasource:
+    def __init__(self, name, host, port, status):
+        self.name = name
+        self.host_port = host + ":" + port #todo поискать адекватные решения
+        self.status = status
 
 @dataclass
 class StartStopPeriods:
@@ -257,6 +265,7 @@ class AppProps:
             _anomaly_detector_epochs=config.get("anomaly_detector_epochs"),
             _anomaly_detector_shift=config.get("anomaly_detector_shift"),
             _anomaly_detector_path=config.get("anomaly_detector_path"),
+            _anomaly_detector_seria_name='test',
             _corr_detector_ssa_window_size=config.get("corr_detector_ssa_window_size"),
             _corr_detector_ssa_group=config.get("corr_detector_ssa_group"),
             _corr_detector_cov_window_size=config.get("corr_detector_cov_window_size"),
@@ -358,9 +367,11 @@ class App:
         self.final_result = []
         self.add_routes()
         self.is_work_mode = False
+        self.datasources = self._upload_datasources()
 
     async def start(self):
         try:
+            self.flask_app.run(host='0.0.0.0', port=5000, debug=True) #todo убрать дебаг
             while True:
                 start_time = time.time()
                 self.logger.debug(f"Start new cycle in {start_time}")
@@ -377,10 +388,18 @@ class App:
         self.composite_detector.save_model()
         self.anomaly_detector.save_model()
 
+    def datasources_page(self):
+        response = make_response(render_template('datasources.html', datasources=self.datasources))
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
     def prometheus_actuator(self):
         return jsonify({
             'final_result': self.final_result[-1]
         })
+
+    def main_page(self):
+        return '<html><body><h1>Welcome to the Data Service</h1><p><a href="/datasources">View Datasources</a></p></body></html>'
 
     def retrain_endpoint(self):
         data_ = request.json
@@ -448,6 +467,8 @@ class App:
         self.flask_app.add_url_rule('/actuator/prometheus', 'prometheus_actuator', self.prometheus_actuator,
                                     methods=['GET'])
         self.flask_app.add_url_rule('/retrain', 'retrain_endpoint', self.retrain_endpoint, methods=['POST'])
+        self.flask_app.add_url_rule('/', 'main_page', self.main_page, methods=['GET'])
+        self.flask_app.add_url_rule('/datasources', 'datasources', self.datasources_page, methods=['GET'])
 
     def _init_storage_client(self):
         return VictoriaMetricsClient(
@@ -477,6 +498,7 @@ class App:
             1,
             self.app_props.get_detectors_props().get_behavior_detector_train_shift(),
             self.app_props.get_detectors_props().get_behavior_detector_anomaly_metric_name(),
+            2,
             self.app_props.get_logger_level())
 
         correlation_detector_ = CorrelationDetector(

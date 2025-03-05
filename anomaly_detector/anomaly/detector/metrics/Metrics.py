@@ -1,5 +1,6 @@
+import json
 from datetime import datetime
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import matplotlib.dates as mdates
 import numpy as np
@@ -32,6 +33,11 @@ class Metric:
         return (f"Metric(name={self.name!r}, tags={self.tags!r}, "
                 f"values={self.values!r}, timestamps={self.timestamps!r})")
 
+    def is_partially_match(self, metric: 'Metric'):
+        if metric.name and metric.name != self.name:
+            return False
+        return all(self.tags.get(k) == v for k, v in metric.tags.items())
+
 
 class Metrics:
     single_seria_max_size: int
@@ -41,7 +47,7 @@ class Metrics:
     _series_length: int = 0
     _last_updated: int = 0
 
-    def __init__(self, metrics: List[Metric], seria_max_size=50, series=None, timestamps=None):
+    def __init__(self, metrics: Optional[List[Metric]], seria_max_size=50, series=None, timestamps=None):
         """
         :param metrics: base metrics must not be empty and can't change
         :param seria_max_size: current value size of metrics need to equal this value
@@ -88,6 +94,14 @@ class Metrics:
         for key, values in self.series.items():
             self.series[key] = self._shortcut_seria(values, self.single_seria_max_size)
 
+    def to_json(self) -> str:
+        """Converts the Metrics object to a JSON string."""
+        return json.dumps({
+            "single_seria_max_size": self.single_seria_max_size,
+            "series": self.series,
+            "timestamps": self.timestamps
+            }, indent=4)
+
     def series_length(self) -> int:
         if self._series_length == 0:
             self._series_length = len(self.series[list(self.series.keys())[0]])
@@ -98,7 +112,6 @@ class Metrics:
         if check_any_key(keys, m2.series.keys()):
             grid_3d_cur_ts_ = [(ts, a, idx) for a in [0] for idx, ts in enumerate(self.timestamps)]
             grid_3d_m2_ts_ = [(ts, a, idx) for a in [1] for idx, ts in enumerate(m2.timestamps)]
-            #it's considered that the values for the same TS for the same Metric but in diff Metrics are the same
             merged_grid_list_ = self.merge_grids_(grid_3d_cur_ts_, grid_3d_m2_ts_)
             final_ts_grid_ = sorted(merged_grid_list_, key=lambda x: x[0])
             final_size_ = len(final_ts_grid_)
@@ -126,6 +139,15 @@ class Metrics:
     def merge(self, another: 'Metrics'):
         self.union(another)
         return self.copy_cut_off()
+
+    def series_join(self, m2: 'Metrics'):
+        if self.timestamps == m2.timestamps:
+            for key in m2.series.keys():
+                if key not in self.series.keys():
+                    self.series[key] = m2.series[key]
+        raise ValueError(f"Failed to join metrics. "
+                         f"Timestamps is not equal current {self.timestamps}"
+                         f" and income {m2.timestamps}.")
 
     def union(self, m2: 'Metrics'):
         keys = self.series.keys()
@@ -277,6 +299,14 @@ class Metrics:
             new_series_[key] = new_series_[key][:new_size] \
                 if new_size \
                 else new_series_[key][:self.single_seria_max_size]
+
+    def filter(self, metrics_names):
+        if any(name in self.series.keys() for name in metrics_names):
+            raise ValueError(f"No one of requested metrics were found. Current metris: {",".join(self.series.keys())}")
+        return Metrics(None,
+                                   self.single_seria_max_size,
+                                   {key: value for key, value in self.series.items() if key in metrics_names},
+                                   self.timestamps)
 
 
 def split(values_timestamp_list):
